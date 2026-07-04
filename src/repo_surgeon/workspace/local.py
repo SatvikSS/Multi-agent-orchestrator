@@ -52,6 +52,7 @@ class LocalWorkspace(Workspace):
 
     def write_file(self, rel_path: str, content: str) -> None:
         target = self._safe_path(rel_path)
+        target.parent.mkdir(parents=True, exist_ok=True)  # allow creating new files/dirs
         target.write_text(content, encoding="utf-8")
         self._touched.add(rel_path)
 

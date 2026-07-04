@@ -90,33 +90,68 @@ def route_candidates(
     *,
     limit: int = 5,
 ) -> list[str]:
-    """Choose candidate files for an issue, most-relevant first, capped at `limit`."""
-    repo_files = set(workspace.list_files(suffix=".py"))
+    """Choose candidate files for an issue, most-relevant first, capped at `limit`.
+
+    Considers code (.py) plus doc/config files, so non-code tasks (e.g. "update the
+    README") can be localized too.
+    """
+    all_files = set(workspace.list_files())
+    py_files = {f for f in all_files if f.endswith(".py")}
+    text = f"{issue.title} {issue.body}".lower()
     ordered: list[str] = []
 
     def add(path: str) -> None:
-        if path in repo_files and path not in ordered:
+        if path in all_files and path not in ordered:
             ordered.append(path)
 
-    # 1) Explicit path hints from the issue.
+    # 1) Explicit path hints from the issue (any extension).
     for path in issue.hint_paths:
         add(path)
 
-    # 2) Files containing any symbol named in the issue.
+    # 2) Doc-keyword targets (README / changelog / license / docs).
+    for path in _doc_targets(all_files, text):
+        add(path)
+
+    # 3) Files containing any symbol named in the issue.
     for symbol in issue.hint_symbols:
         for hit in grep(workspace, symbol, max_results=10):
             add(hit.file_path)
 
-    # 3) Keyword overlap between the issue text and each file summary.
+    # 4) Keyword overlap between the issue text and each file summary.
     for path in _rank_by_summary_overlap(kb, issue):
         add(path)
 
-    # 4) Fallback for tiny repos: just take the known files.
+    # 5) Fallback for tiny repos: the known code files.
     if not ordered:
-        for path in sorted(repo_files):
+        for path in sorted(py_files):
             add(path)
 
     return ordered[:limit]
+
+
+_DOC_KEYWORDS = (
+    "readme",
+    "changelog",
+    "license",
+    "licence",
+    "documentation",
+    "docs",
+    "contributing",
+)
+
+
+def _doc_targets(all_files: set[str], issue_text: str) -> list[str]:
+    """Doc/config files worth surfacing when the issue references them by keyword."""
+    from pathlib import PurePosixPath
+
+    targets: list[str] = []
+    for keyword in _DOC_KEYWORDS:
+        if keyword not in issue_text:
+            continue
+        for f in sorted(all_files):
+            if keyword.rstrip("s") in PurePosixPath(f).name.lower():
+                targets.append(f)
+    return targets
 
 
 def _rank_by_summary_overlap(kb: KnowledgeBase, issue: Issue) -> list[str]:

@@ -37,6 +37,7 @@ def run_issue(
     *,
     config: AppConfig | None = None,
     allow_dirty: bool = False,
+    require_tests: bool | None = None,
     llm_provider: LLMProvider = build_llm,
     test_runner: TestRunner | None = None,
     workspace: Workspace | None = None,
@@ -48,6 +49,7 @@ def run_issue(
     """
     cfg = config or load_config()
     token = cfg.secrets.github_token
+    verify = cfg.require_tests if require_tests is None else require_tests
 
     workspace = workspace or open_workspace(repo_ref, github_token=token)
     try:
@@ -81,6 +83,7 @@ def run_issue(
             "test_results": [],
             "apply_ok": False,
             "writer_feedback": "",
+            "require_tests": verify,
             "notes": [f"[runner] working on branch '{work_branch}'"],
         }
 

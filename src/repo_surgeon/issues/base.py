@@ -7,8 +7,11 @@ from abc import ABC, abstractmethod
 
 from repo_surgeon.models import Issue
 
-# File paths like `pkg/module.py` and bare Python files.
-_PATH_RE = re.compile(r"\b[\w./-]+\.py\b")
+# File paths like `pkg/module.py`, `README.md`, `config.yaml` — code and doc/config files.
+_PATH_RE = re.compile(
+    r"\b[\w./-]+\.(?:py|md|rst|txt|toml|cfg|ini|yaml|yml|json|js|ts|tsx|sh)\b",
+    re.IGNORECASE,
+)
 # Symbols named in prose, e.g. `paginate()` or `class Foo`.
 _CALL_RE = re.compile(r"\b([a-zA-Z_]\w+)\s*\(")
 _DEF_RE = re.compile(r"\b(?:def|class)\s+([a-zA-Z_]\w+)")

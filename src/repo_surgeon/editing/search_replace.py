@@ -70,6 +70,12 @@ def apply_patches(workspace: Workspace, patches: list[Patch]) -> ApplyResult:
     pending: dict[str, str] = {}
     failures: list[str] = []
     for patch in patches:
+        # An empty SEARCH means "create or fully rewrite this file" (Aider convention).
+        if patch.search.strip() == "":
+            content = patch.replace
+            pending[patch.file_path] = content if content.endswith("\n") else content + "\n"
+            continue
+
         current = pending.get(patch.file_path)
         if current is None:
             try:

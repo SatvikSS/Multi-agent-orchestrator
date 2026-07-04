@@ -38,5 +38,6 @@ class RunState(TypedDict, total=False):
     # Control + delivery.
     status: RunStatus
     decision: str  # critic's routing decision; the conditional edge dispatches on this
+    require_tests: bool  # if False, deliver a cleanly-applied patch without test verification
     delivery_ref: str  # branch name or PR URL
     notes: Annotated[list[str], operator.add]  # human-readable trace of what each node did

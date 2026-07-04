@@ -194,14 +194,18 @@ def deliver(
 ) -> dict:
     """Finalize a resolved run: commit on the work branch and return to the original branch."""
     issue = state["issue"]
+    verified = state.get("require_tests", True)
+    tag = "" if verified else " (UNVERIFIED — no tests run; review the diff)"
     ref = workspace.deliver(
         title=f"fix: {issue.title}",
-        body=f"Automated fix by repo-surgeon.\n\nPlan:\n{state.get('plan', '')}",
+        body=(
+            f"Automated fix by repo-surgeon{tag}.\n\nPlan:\n{state.get('plan', '')}"
+        ),
     )
     return {
         "delivery_ref": ref,
         "status": RunStatus.RESOLVED,
-        "notes": [f"[deliver] delivered on '{ref}'"],
+        "notes": [f"[deliver] delivered on '{ref}'{tag}"],
     }
 
 

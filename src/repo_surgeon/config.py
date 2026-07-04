@@ -108,6 +108,10 @@ class AppConfig(BaseModel):
     sandbox: Sandbox = Field(default_factory=Sandbox)
     semantic: Semantic = Field(default_factory=Semantic)
     secrets: Secrets = Field(default_factory=Secrets)
+    # When True (default), a fix must pass the repo's tests in the sandbox to be delivered.
+    # When False, a cleanly-applied patch is delivered UNVERIFIED — for doc/config tasks or
+    # repos without a test suite. Overridable per-run (CLI --no-verify).
+    require_tests: bool = True
 
     def role(self, name: str) -> RoleModel:
         if name not in self.roles:
@@ -136,5 +140,10 @@ def load_config(config_path: Path | None = None) -> AppConfig:
     sandbox = Sandbox(**(raw.get("sandbox") or {}))
     semantic = Semantic(**(raw.get("semantic") or {}))
     return AppConfig(
-        roles=roles, budget=budget, sandbox=sandbox, semantic=semantic, secrets=Secrets()
+        roles=roles,
+        budget=budget,
+        sandbox=sandbox,
+        semantic=semantic,
+        secrets=Secrets(),
+        require_tests=bool(raw.get("require_tests", True)),
     )

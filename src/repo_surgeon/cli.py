@@ -174,6 +174,14 @@ def run(
             help="Run even if the repo has uncommitted changes (they may be lost on retries).",
         ),
     ] = False,
+    no_verify: Annotated[
+        bool,
+        typer.Option(
+            "--no-verify",
+            help="Deliver a cleanly-applied patch without running tests (doc/config tasks, "
+            "or repos without a test suite). Skips the Docker sandbox.",
+        ),
+    ] = False,
     assume_yes: Annotated[
         bool,
         typer.Option("--yes", "-y", help="Accept the top routing suggestion without prompting."),
@@ -206,7 +214,14 @@ def run(
             repo = _route_issue_to_project(issue, cfg, assume_yes=assume_yes)
     repo, workspace = _resolve_repo_interactive(repo, init_git=init_git, staging=staging)
     try:
-        final = run_issue(issue, repo, config=cfg, allow_dirty=allow_dirty, workspace=workspace)
+        final = run_issue(
+            issue,
+            repo,
+            config=cfg,
+            allow_dirty=allow_dirty,
+            require_tests=not no_verify,
+            workspace=workspace,
+        )
     except DirtyWorkspaceError as exc:
         console.print(f"[bold red]Refusing to run:[/bold red] {exc}")
         raise typer.Exit(code=1) from exc

@@ -24,8 +24,13 @@ from repo_surgeon.workspace.base import Workspace
 
 
 def _route_after_write(state: RunState) -> str:
-    """Test the patch if it applied cleanly; otherwise go straight to the critic."""
-    return "test" if state.get("apply_ok", False) else "critic"
+    """Route a written patch: retest, deliver unverified, or hand a failure to the critic."""
+    if not state.get("apply_ok", False):
+        return "critic"
+    # No-verify mode (doc/config tasks or repos without tests): deliver on clean apply.
+    if not state.get("require_tests", True):
+        return "deliver"
+    return "test"
 
 
 def _route_after_critic(state: RunState) -> str:
@@ -77,7 +82,11 @@ def build_graph(
     g.add_edge("build_kb", "localize")
     g.add_edge("localize", "plan")
     g.add_edge("plan", "write")
-    g.add_conditional_edges("write", _route_after_write, {"test": "test", "critic": "critic"})
+    g.add_conditional_edges(
+        "write",
+        _route_after_write,
+        {"test": "test", "critic": "critic", "deliver": "deliver"},
+    )
     g.add_edge("test", "critic")
     g.add_conditional_edges(
         "critic",

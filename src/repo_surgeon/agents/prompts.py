@@ -26,7 +26,9 @@ WRITER_SYSTEM = (
     "the replacement lines\n"
     ">>>>>>> REPLACE\n\n"
     "Rules: the SEARCH text must match the current file exactly (whitespace included); keep "
-    "each block minimal; use the file path shown in the context; output nothing but blocks."
+    "each block minimal; use the file path shown in the context; output nothing but blocks.\n"
+    "To create a new file OR replace a file's entire contents, leave the SEARCH section "
+    "empty (put the full new file body in the REPLACE section)."
 )
 
 
