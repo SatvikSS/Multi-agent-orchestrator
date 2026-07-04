@@ -402,6 +402,26 @@ def _print_eval_summary(summary: EvalSummary) -> None:
 
 
 @app.command()
+def ui() -> None:
+    """Launch the Streamlit demo UI (requires the 'ui' extra: uv sync --extra ui)."""
+    import subprocess
+    import sys
+
+    from repo_surgeon.ui import app_path
+
+    try:
+        import streamlit  # noqa: F401
+    except ImportError:
+        console.print(
+            "[bold red]Streamlit is not installed.[/bold red] Run "
+            "[cyan]uv sync --extra ui[/cyan] first."
+        )
+        raise typer.Exit(code=1) from None
+
+    subprocess.run([sys.executable, "-m", "streamlit", "run", str(app_path())], check=False)
+
+
+@app.command()
 def version() -> None:
     """Print the installed version."""
     console.print(__version__)

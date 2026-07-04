@@ -40,6 +40,10 @@ dev = [
 chroma = [
     "chromadb>=0.5.0",
 ]
+# Local Streamlit demo UI (`surgeon ui`).
+ui = [
+    "streamlit>=1.40",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -83,6 +87,7 @@ module = [
     "chromadb",
     "chromadb.*",
     "tree_sitter_python",
+    "streamlit",
 ]
 ignore_missing_imports = true
 

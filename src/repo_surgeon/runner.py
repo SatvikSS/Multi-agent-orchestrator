@@ -11,6 +11,7 @@ branch is deleted, leaving the checkout exactly as it started.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import cast
 
 from langchain_core.runnables import RunnableConfig
@@ -41,11 +42,13 @@ def run_issue(
     llm_provider: LLMProvider = build_llm,
     test_runner: TestRunner | None = None,
     workspace: Workspace | None = None,
+    on_event: Callable[[RunState], None] | None = None,
 ) -> RunState:
     """Resolve `issue_ref` against `repo_ref` and run the full orchestration graph.
 
     `workspace` overrides the default resolution — used for staging mode, where the
-    caller has already built an isolated copy to work in.
+    caller has already built an isolated copy to work in. `on_event`, if given, is called
+    with the full state after each graph step (used by the UI to stream progress live).
     """
     cfg = config or load_config()
     token = cfg.secrets.github_token
@@ -103,7 +106,14 @@ def run_issue(
             "metadata": {"repo": repo_ref, "issue_source": issue.source},
         }
         try:
-            result = graph.invoke(entry, config=invoke_config)
+            if on_event is None:
+                result = graph.invoke(entry, config=invoke_config)
+            else:
+                # Stream full state after each step so callers can render progress live.
+                result = entry
+                for chunk in graph.stream(entry, config=invoke_config, stream_mode="values"):
+                    result = chunk
+                    on_event(cast(RunState, chunk))
         except BaseException:
             # Crash mid-run: discard edits, return to the original branch, drop the work branch.
             workspace.abort_work()

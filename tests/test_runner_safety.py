@@ -101,6 +101,23 @@ def test_success_returns_to_original_branch(buggy_repo: Path, app_config: AppCon
     assert final["delivery_ref"] in _branches(buggy_repo)
 
 
+def test_on_event_streams_progress(buggy_repo: Path, app_config: AppConfig) -> None:
+    events: list[list[str]] = []
+    final = run_issue(
+        "Fix add() in calc.py",
+        str(buggy_repo),
+        config=app_config,
+        llm_provider=_provider(),
+        test_runner=content_test_runner("a + b"),
+        on_event=lambda state: events.append(list(state.get("notes", []))),
+    )
+    assert final["status"] == RunStatus.RESOLVED
+    assert len(events) >= 3  # one per graph step
+    # Notes accumulate monotonically across events, ending at the final trace.
+    assert len(events[-1]) >= len(events[0])
+    assert any("deliver" in n for n in events[-1])
+
+
 def test_crash_mid_run_cleans_up(buggy_repo: Path, app_config: AppConfig) -> None:
     def exploding_runner(workspace: Workspace) -> SandboxResult:
         raise RuntimeError("sandbox exploded")
