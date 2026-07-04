@@ -8,26 +8,29 @@
 defaults:
   temperature: 0.0
 
+# Cheap Chinese models via OpenRouter (kept well within a small budget).
+# Light read/route roles use a tiny model; the writer/planner use DeepSeek V3.2 so
+# search-replace blocks come out valid on the first try (retries cost money).
 roles:
   localizer:
     provider: openrouter
-    model: anthropic/claude-haiku-4-5
+    model: qwen/qwen-2.5-7b-instruct
   planner:
     provider: openrouter
-    model: anthropic/claude-sonnet-5
+    model: deepseek/deepseek-v3.2
   writer:
     provider: openrouter
-    model: anthropic/claude-sonnet-5
+    model: deepseek/deepseek-v3.2
   critic:
     provider: openrouter
-    model: openai/gpt-4o
+    model: qwen/qwen-2.5-7b-instruct
   summarizer:
     provider: openrouter
-    model: anthropic/claude-haiku-4-5
+    model: qwen/qwen-2.5-7b-instruct
 
 # Run budget: caps the self-correction loop.
 budget:
-  max_attempts: 4
+  max_attempts: 2
   max_cost_usd: 2.0
 
 # Docker sandbox for running the target repo's test suite.
