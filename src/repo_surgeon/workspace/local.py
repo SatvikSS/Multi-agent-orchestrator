@@ -34,6 +34,7 @@ class LocalWorkspace(Workspace):
         self._original_branch: str | None = None
         self._touched: set[str] = set()  # files the agents wrote; only these + tracked edits commit
         self._ensure_cache_excluded()
+        self._ensure_identity()
 
     @property
     def root_path(self) -> Path:
@@ -146,6 +147,19 @@ class LocalWorkspace(Workspace):
             text=True,
         )
         return result.returncode == 0
+
+    def _ensure_identity(self) -> None:
+        """Set a repo-local author fallback only if no git identity is configured.
+
+        No-op when a global identity exists (your commits stay authored as you); on
+        identity-less environments (fresh clones, CI runners) it keeps commits from failing.
+        """
+        probe = subprocess.run(
+            ["git", "config", "user.email"], cwd=self._root, capture_output=True, text=True
+        )
+        if probe.returncode != 0 or not probe.stdout.strip():
+            self._git("config", "user.email", "repo-surgeon@local")
+            self._git("config", "user.name", "repo-surgeon")
 
     def _ensure_cache_excluded(self) -> None:
         """Keep the KB cache out of commits via the repo-local (unshared) exclude file."""
