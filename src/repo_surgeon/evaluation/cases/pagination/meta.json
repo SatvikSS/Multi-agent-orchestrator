@@ -1,0 +1,3 @@
+{
+  "issue": "paginate() in pager.py returns one item too many. A page of size N should contain exactly N items, but it currently returns N+1."
+}

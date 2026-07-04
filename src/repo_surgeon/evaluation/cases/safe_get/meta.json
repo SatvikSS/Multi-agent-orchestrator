@@ -1,0 +1,3 @@
+{
+  "issue": "lookup() in store.py raises KeyError when the key is missing. It should return None for a missing key instead of raising."
+}

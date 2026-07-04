@@ -1,0 +1,53 @@
+# Per-role model routing. Each agent role maps to a provider + model.
+# provider is one of: openrouter | ollama | anthropic | openai
+# Cheap/local models for read-heavy roles; strong cloud models for writing.
+#
+# Note: local (ollama) models are weak at emitting valid search-replace edits,
+# so the `writer` defaults to a strong cloud model. Override freely.
+
+defaults:
+  temperature: 0.0
+
+roles:
+  localizer:
+    provider: openrouter
+    model: anthropic/claude-haiku-4-5
+  planner:
+    provider: openrouter
+    model: anthropic/claude-sonnet-5
+  writer:
+    provider: openrouter
+    model: anthropic/claude-sonnet-5
+  critic:
+    provider: openrouter
+    model: openai/gpt-4o
+  summarizer:
+    provider: openrouter
+    model: anthropic/claude-haiku-4-5
+
+# Run budget: caps the self-correction loop.
+budget:
+  max_attempts: 4
+  max_cost_usd: 2.0
+
+# Docker sandbox for running the target repo's test suite.
+sandbox:
+  python_version: "3.11"
+  test_command: "python -m pytest -q -rfE -p no:cacheprovider"
+  timeout_seconds: 300
+  mem_limit: "512m"
+  cpus: 2.0
+  pids_limit: 256
+  network_enabled: false      # untrusted test code runs with no network
+  install_requirements: true  # best-effort pip install of requirements.txt
+
+# Optional semantic code search — the writer's "find related code" tool.
+# Off by default (needs an embeddings backend + indexing cost). When on, the writer's
+# context is enriched with the most similar code chunks to the issue/plan.
+semantic:
+  enabled: false
+  embed_provider: ollama       # openai | ollama | fake
+  embed_model: nomic-embed-text
+  vector_store: memory         # memory | chroma (chroma needs the [chroma] extra)
+  top_k: 3
+  max_files: 60

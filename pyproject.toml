@@ -1,0 +1,94 @@
+[project]
+name = "repo-surgeon"
+version = "0.1.0"
+description = "Multi-agent coding orchestrator (LangGraph) that resolves GitHub issues and local bugs via a self-correcting agent pipeline."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=0.2.60",
+    "langchain>=0.3.13",
+    "langchain-core>=0.3.28",
+    "langchain-openai>=0.2.14",
+    "langchain-anthropic>=0.3.0",
+    "langchain-ollama>=0.2.1",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "typer>=0.15.1",
+    "pyyaml>=6.0.2",
+    "rich>=13.9.0",
+    "docker>=7.1.0",
+    "PyGithub>=2.5.0",
+    "python-dotenv>=1.0.1",
+    "numpy>=2.1.0",
+    "tree-sitter>=0.23.0",
+    "tree-sitter-python>=0.23.0",
+]
+
+[project.scripts]
+surgeon = "repo_surgeon.cli:app"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.8.4",
+    "mypy>=1.14.0",
+    "types-PyYAML>=6.0.12",
+]
+# Persistent vector store for semantic search. The default in-memory index needs no
+# extra deps; install this to enable the Chroma backend (`vector_store: chroma`).
+chroma = [
+    "chromadb>=0.5.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/repo_surgeon"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+# Benchmark fixtures are intentionally simple, buggy sample repos — not project code.
+extend-exclude = ["src/repo_surgeon/evaluation/cases"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+# 3.12: numpy's bundled stubs use `type` statements that older targets reject. Runtime
+# support is still >=3.11 (see requires-python); this only affects type-check parsing.
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+plugins = ["pydantic.mypy"]
+# LangGraph's builder API is largely untyped; relax the two strict flags that fight it
+# while keeping full strictness on our own code.
+disallow_untyped_calls = false
+disallow_any_generics = false
+# Benchmark fixtures are sample buggy repos materialized at runtime, not imported code.
+exclude = ['src/repo_surgeon/evaluation/cases/']
+
+[[tool.mypy.overrides]]
+module = [
+    "langgraph.*",
+    "langchain.*",
+    "langchain_core.*",
+    "docker",
+    "docker.*",
+    "chromadb",
+    "chromadb.*",
+    "tree_sitter_python",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --cov=repo_surgeon --cov-report=term-missing"
+markers = [
+    "docker: integration tests that require a running Docker daemon (deselect with -m 'not docker')",
+]
